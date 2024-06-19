@@ -1,0 +1,33 @@
+#!/bin/bash
+set -euxo pipefail
+
+echo "Waiting for the Instruqt host bootstrap to finish..."
+until [ -f /opt/instruqt/bootstrap/host-bootstrap-completed ]
+do
+    sleep 1
+done
+
+# install ansible and deps
+sudo apt update -y
+sudo apt install -y unzip ansible
+snap install yq
+
+# Enable rpk
+curl -LO https://github.com/redpanda-data/redpanda/releases/latest/download/rpk-linux-amd64.zip
+mkdir -p ~/.local/bin
+unzip rpk-linux-amd64.zip -d ~/.local/bin/
+export PATH="~/.local/bin:$PATH"
+echo export PATH="~/.local/bin:$PATH" >> ~/.bashrc
+source ~/.bashrc
+
+# generate certs
+curl -sLO https://gist.githubusercontent.com/vuldin/e4b4a776df6dc0b4593302437ea57eed/raw/generate-certs.sh
+chmod +x generate-certs.sh
+./generate-certs.sh testdomain.local
+
+# clone deployment-automation
+git clone https://github.com/redpanda-data/deployment-automation.git
+
+# cleanup
+rm -rf certs private-ca-key rpk-linux-amd64.zip generate-certs.sh
+echo "setup complete"

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set -euxo pipefail
+
+source ~/.bashrc
+
+# deploy redpanda
+cd deployment-automation
+export DEPLOYMENT_PREFIX=instruqt
+export ANSIBLE_COLLECTIONS_PATH=$(realpath .)/artifacts/collections
+export ANSIBLE_ROLES_PATH=$(realpath .)/artifacts/roles
+export ANSIBLE_INVENTORY=$(realpath .)/artifacts/hosts_gcp_$DEPLOYMENT_PREFIX.ini
+ansible-galaxy install -r requirements.yml
+IP_A=$(nslookup node-a | grep Address | tail -1 | cut -f2 -d' ')
+IP_B=$(nslookup node-b | grep Address | tail -1 | cut -f2 -d' ')
+IP_C=$(nslookup node-c | grep Address | tail -1 | cut -f2 -d' ')
+cat << EOF > hosts.ini
+[redpanda]
+node-a ansible_user=root ansible_become=True private_ip=${IP_A} id=0
+node-b ansible_user=root ansible_become=True private_ip=${IP_B} id=1
+node-c ansible_user=root ansible_become=True private_ip=${IP_C} id=2
+EOF
+ansible-playbook --private-key ~/.ssh/id_rsa -v ansible/provision-cluster.yml -i hosts.ini -e redpanda_version=24.1.7-1
+
+# create rpk profile
+rpk profile create redpanda -s brokers=node-a:9092,node-b:9092,node-c:9092 -s admin.hosts=node-a:9644,node-b:9644,node-c:9644
+
+# create topics
+rpk topic create log1 -p 3 -r 3
+rpk topic create log2 -p 3 -r 3
+rpk topic create log3 -p 3 -r 3
+rpk topic create log4 -p 3 -r 3
+rpk topic create log5 -p 3 -r 3
+
+# get client scripts
+curl -sLO https://gist.githubusercontent.com/vuldin/ac7b5fe2ea841b1fa162dde86e6dca75/raw/185b56f47804297015c5a2ab8183512ebd7b9673/produce.sh
+chmod +x produce.sh
+

@@ -20,3 +20,6 @@ virtualmachines:
     image: ubuntu-os-cloud/ubuntu-2204-lts
     shell: /bin/bash
     machine_type: e2-standard-2
+  - name: docker
+    image: instruqt/docker-2010
+    machine_type: n1-standard-1

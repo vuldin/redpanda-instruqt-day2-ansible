@@ -15,6 +15,7 @@ tags:
 owner: redpanda
 developers:
 - pmw@redpanda.com
+- josh@redpanda.com
 show_timer: true
 idle_timeout: 300
 timelimit: 8400
@@ -26,4 +27,4 @@ lab_config:
   feedback_recap_enabled: true
   loadingMessages: true
   hideStopButton: false
-checksum: "9550011760589255938"
+checksum: "1313695126719223171"
